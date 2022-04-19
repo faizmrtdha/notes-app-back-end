@@ -11,7 +11,7 @@ class UsersService {
     this._pool = new Pool();
   }
 
-  async verivyUsername(username) {
+  async verifyUsername(username) {
     const query = {
       text: "SELECT username FROM users WHERE username = $1",
       values: [username],
@@ -20,14 +20,12 @@ class UsersService {
     const result = await this._pool.query(query);
 
     if (result.rowCount > 0) {
-      throw new InvariantError(
-        "Gagal menambahkan user. Username sudah digunakan."
-      );
+      throw new InvariantError("Gagal menambahkan user. Username sudah digunakan.");
     }
   }
 
   async addUser({ username, password, fullname }) {
-    await this.verivyUsername(username);
+    await this.verifyUsername(username);
 
     const id = `user-${nanoid(16)}`;
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -59,7 +57,7 @@ class UsersService {
     return result.rows[0];
   }
 
-  async verivyUserCredential(username, password) {
+  async verifyUserCredential(username, password) {
     const query = {
       text: "SELECT id, password FROM users WHERE username = $1",
       values: [username],
