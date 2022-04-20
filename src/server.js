@@ -24,6 +24,7 @@ const init = async () => {
   const notesService = new NotesService();
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
+
   const server = Hapi.server({
     port: process.env.PORT,
     host: process.env.HOST,
@@ -34,12 +35,14 @@ const init = async () => {
     },
   });
 
+  // registrasi plugin eksternal
   await server.register([
     {
       plugin: Jwt,
     },
   ]);
 
+  // mendefinisikan strategy autentikasi jwt
   server.auth.strategy("notesapp_jwt", "jwt", {
     keys: process.env.ACCESS_TOKEN_KEY,
     verify: {

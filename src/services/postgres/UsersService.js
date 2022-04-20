@@ -1,7 +1,6 @@
 const { Pool } = require("pg");
 const { nanoid } = require("nanoid");
 const bcrypt = require("bcrypt");
-
 const InvariantError = require("../../exceptions/InvariantError");
 const NotFoundError = require("../../exceptions/NotFoundError");
 const AuthenticationError = require("../../exceptions/AuthenticationError");
@@ -11,22 +10,8 @@ class UsersService {
     this._pool = new Pool();
   }
 
-  async verifyUsername(username) {
-    const query = {
-      text: "SELECT username FROM users WHERE username = $1",
-      values: [username],
-    };
-
-    const result = await this._pool.query(query);
-
-    if (result.rowCount > 0) {
-      throw new InvariantError("Gagal menambahkan user. Username sudah digunakan.");
-    }
-  }
-
   async addUser({ username, password, fullname }) {
-    await this.verifyUsername(username);
-
+    await this.verifyNewUsername(username);
     const id = `user-${nanoid(16)}`;
     const hashedPassword = await bcrypt.hash(password, 10);
     const query = {
@@ -36,21 +21,34 @@ class UsersService {
 
     const result = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!result.rows.length) {
       throw new InvariantError("User gagal ditambahkan");
     }
-
     return result.rows[0].id;
+  }
+
+  async verifyNewUsername(username) {
+    const query = {
+      text: "SELECT username FROM users WHERE username = $1",
+      values: [username],
+    };
+
+    const result = await this._pool.query(query);
+
+    if (result.rows.length > 0) {
+      throw new InvariantError("Gagal menambahkan user. Username sudah digunakan.");
+    }
   }
 
   async getUserById(userId) {
     const query = {
-      text: "SELECT id,username, fullname FROM users WHERE id = $1",
+      text: "SELECT id, username, fullname FROM users WHERE id = $1",
       values: [userId],
     };
 
     const result = await this._pool.query(query);
-    if (!result.rowCount) {
+
+    if (!result.rows.length) {
       throw new NotFoundError("User tidak ditemukan");
     }
 
@@ -64,7 +62,8 @@ class UsersService {
     };
 
     const result = await this._pool.query(query);
-    if (!result.rowCount) {
+
+    if (!result.rows.length) {
       throw new AuthenticationError("Kredensial yang Anda berikan salah");
     }
 
